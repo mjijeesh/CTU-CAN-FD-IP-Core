@@ -59,6 +59,8 @@ static bool pci_use_second = 1;
 module_param(pci_use_second, bool, 0444);
 MODULE_PARM_DESC(pci_use_second, "Use the second CAN core on PCIe card. Default: 1 (yes)");
 
+#define CTUCAN_IOCDBG_MASKRX   (SIOCDEVPRIVATE)
+
 /* TX buffer rotation:
  * - when a buffer transitions to empty state, rotate order and priorities
  * - if more buffers seem to transition at the same time, rotate
@@ -868,11 +870,37 @@ static int ctucan_get_berr_counter(const struct net_device *ndev,
 	return 0;
 }
 
+static int ctucan_ioctl(struct net_device *ndev, struct ifreq *ifr, int cmd)
+{
+	struct ctucan_priv *priv = netdev_priv(ndev);
+	netdev_dbg(ndev, "ctucan_ioctl");
+
+	switch(cmd)
+	{
+	case CTUCAN_IOCDBG_MASKRX: {
+		union ctu_can_fd_int_stat mask;
+		bool mask_rx = ifr->ifr_flags & 1;
+		mask.u32 = 0;
+		mask.s.rbnei = 1;
+		netdev_info(ndev, "DBG: setting mask_rx to %d", mask_rx);
+		if (mask_rx)
+			ctu_can_fd_int_mask_set(&priv->p, mask);
+		else
+			ctu_can_fd_int_mask_clr(&priv->p, mask);
+		return 0;
+	} break;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+
 static const struct net_device_ops ctucan_netdev_ops = {
 	.ndo_open	= ctucan_open,
 	.ndo_stop	= ctucan_close,
 	.ndo_start_xmit	= ctucan_start_xmit,
 	.ndo_change_mtu	= can_change_mtu,
+	.ndo_do_ioctl	= ctucan_ioctl,
 };
 
 static __maybe_unused int ctucan_suspend(struct device *dev)
