@@ -96,20 +96,23 @@ entity CTU_CAN_FD_v1_0 is
         s_apb_pslverr    : out std_logic;
         s_apb_pstrb      : in  std_logic_vector(3 downto 0);
         s_apb_pwdata     : in  std_logic_vector(31 downto 0);
-        s_apb_pwrite     : in  std_logic
+        s_apb_pwrite     : in  std_logic;
+
+        drv_bus_o        : out std_logic_vector(1023 downto 0);
+        stat_bus_o       : out std_logic_vector(511 downto 0)
   );
 end entity CTU_CAN_FD_v1_0;
 
 architecture rtl of CTU_CAN_FD_v1_0 is
- 
     signal reg_data_in      : std_logic_vector(31 downto 0);
     signal reg_data_out     : std_logic_vector(31 downto 0);
     signal reg_addr         : std_logic_vector(23 downto 0);
     signal reg_be           : std_logic_vector(3 downto 0);
     signal reg_rden         : std_logic;
     signal reg_wren         : std_logic;
+    signal drv_bus          : std_logic_vector(1023 downto 0);
+    signal stat_bus         : std_logic_vector(511 downto 0);
 begin
-
     i_can : CAN_top_level
         generic map (
             use_logger      => use_logger,
@@ -139,8 +142,13 @@ begin
             CAN_rx          => CAN_rx,
 
             time_quanta_clk => time_quanta_clk,
-            timestamp       => timestamp
+            timestamp       => timestamp,
+
+            drv_bus_o       => drv_bus,
+            stat_bus_o       => stat_bus
         );
+    drv_bus_o <= drv_bus;
+    stat_bus_o <= stat_bus;
 
     i_apb : apb_ifc
         port map (
