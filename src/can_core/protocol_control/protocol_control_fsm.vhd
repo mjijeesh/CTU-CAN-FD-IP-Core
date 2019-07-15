@@ -576,6 +576,9 @@ architecture rtl of protocol_control_fsm is
     
     -- Arbitration lost condition
     signal arbitration_lost_condition : std_logic;
+
+    -- Loss of arbitration -> Turn receiver!
+    signal arbitration_lost_i   : std_logic;
     
     -- Transmission failed (due to reached number of retransmissions), or
     -- first error, arb lost when there are 0 retransmissions allowed!
@@ -1317,7 +1320,7 @@ begin
         crc_clear_match_flag <= '0';
         err_pos <= ERC_POS_OTHER;
         
-        arbitration_lost <= '0';
+        arbitration_lost_i <= '0';
         set_transmitter_i <= '0';
         set_receiver_i <= '0';
         set_idle_i <= '0';
@@ -1477,7 +1480,7 @@ begin
                 
                 if (arbitration_lost_condition = '1') then
                     txtb_hw_cmd_d.unlock <= '1';
-                    arbitration_lost <= '1';
+                    arbitration_lost_i <= '1';
                     stuff_enable_clear <= '1';
                     if (tx_failed = '1') then
                         txtb_hw_cmd_d.failed  <= '1';
@@ -1509,7 +1512,7 @@ begin
                 
                 if (arbitration_lost_condition = '1') then
                     txtb_hw_cmd_d.unlock <= '1';
-                    arbitration_lost <= '1';
+                    arbitration_lost_i <= '1';
                     stuff_enable_clear <= '1';
                     if (tx_failed = '1') then
                         txtb_hw_cmd_d.failed  <= '1';
@@ -1549,7 +1552,7 @@ begin
                 
                 if (ide_is_arbitration = '1' and arbitration_lost_condition = '1') then
                     txtb_hw_cmd_d.unlock <= '1';
-                    arbitration_lost <= '1';
+                    arbitration_lost_i <= '1';
                     stuff_enable_clear <= '1';
                     if (tx_failed = '1') then
                         txtb_hw_cmd_d.failed  <= '1';
@@ -1595,7 +1598,7 @@ begin
                 
                 if (arbitration_lost_condition = '1') then
                     txtb_hw_cmd_d.unlock <= '1';
-                    arbitration_lost <= '1';
+                    arbitration_lost_i <= '1';
                     stuff_enable_clear <= '1';
                     if (tx_failed = '1') then
                         txtb_hw_cmd_d.failed  <= '1';
@@ -1626,7 +1629,7 @@ begin
                 
                 if (arbitration_lost_condition = '1') then
                     txtb_hw_cmd_d.unlock <= '1';
-                    arbitration_lost <= '1';
+                    arbitration_lost_i <= '1';
                     stuff_enable_clear <= '1';
                     if (tx_failed = '1') then
                         txtb_hw_cmd_d.failed  <= '1';
@@ -2692,7 +2695,7 @@ begin
     ---------------------------------------------------------------------------
     retr_ctr_add <= '0' when (retr_ctr_clear_i = '1' or drv_retr_lim_ena = '0'
                               or is_receiver = '1') else
-                    '1' when (arbitration_lost = '1' and rx_trigger = '1') else
+                    '1' when (arbitration_lost_i = '1' and rx_trigger = '1') else
                     '1' when (err_frm_req = '1') else
                     '0';
 
@@ -2834,6 +2837,7 @@ begin
     is_arbitration <= is_arbitration_i;
     crc_spec_enable <= crc_spec_enable_i;
     retr_ctr_clear <= retr_ctr_clear_i;
+    arbitration_lost <= arbitration_lost_i;
 
     -----------------------------------------------------------------------
     -- Assertions
